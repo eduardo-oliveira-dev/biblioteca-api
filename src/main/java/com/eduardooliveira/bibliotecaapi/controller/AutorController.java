@@ -1,5 +1,6 @@
 package com.eduardooliveira.bibliotecaapi.controller;
 
+import com.eduardooliveira.bibliotecaapi.dto.AutorDTO;
 import com.eduardooliveira.bibliotecaapi.entity.Autor;
 import com.eduardooliveira.bibliotecaapi.service.AutorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/autores")
@@ -18,31 +20,33 @@ public class AutorController {
     private AutorService autorService;
 
     @PostMapping
-    public ResponseEntity<Autor> salvar(@RequestBody Autor autor) {
+    public ResponseEntity<AutorDTO> salvar(@RequestBody Autor autor) {
         Autor salvo = autorService.salvar(autor);
-        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(salvo));
     }
 
     @GetMapping
-    public List<Autor> listar() {
-        return autorService.listarTodos();
+    public List<AutorDTO> listar() {
+        return autorService.listarTodos().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Autor> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<AutorDTO> buscarPorId(@PathVariable Long id) {
         Optional<Autor> autor = autorService.buscarPorId(id);
         if (autor.isPresent()) {
-            return ResponseEntity.ok(autor.get());
+            return ResponseEntity.ok(convertToDTO(autor.get()));
         } else {
             return ResponseEntity.notFound().build();
         }
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Autor> atualizarParcial(@PathVariable Long id, @RequestBody Autor autorParcial) {
+    public ResponseEntity<AutorDTO> atualizarParcial(@PathVariable Long id, @RequestBody Autor autorParcial) {
         try {
             Autor autorAtualizado = autorService.atualizarParcial(id, autorParcial);
-            return ResponseEntity.ok(autorAtualizado);
+            return ResponseEntity.ok(convertToDTO(autorAtualizado));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -58,4 +62,11 @@ public class AutorController {
         }
     }
 
+    private AutorDTO convertToDTO(Autor autor) {
+        AutorDTO dto = new AutorDTO();
+        dto.setId(autor.getId());
+        dto.setNome(autor.getNome());
+        dto.setNacionalidade(autor.getNacionalidade());
+        return dto;
+    }
 }
